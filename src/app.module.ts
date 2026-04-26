@@ -5,6 +5,7 @@ import { AuthModule } from './modules/auth/auth.module';
 import { UsageModule } from './modules/usage/usage.module';
 import { AiModule } from './modules/ai/ai.module';
 import { SubscriptionModule } from './modules/subscription/subscription.module';
+import { NotificationModule } from './modules/notification/notification.module';
 
 @Module({
   imports: [
@@ -31,6 +32,7 @@ import { SubscriptionModule } from './modules/subscription/subscription.module';
     UsageModule,
     AiModule,
     SubscriptionModule,
+    NotificationModule,
   ],
 })
 export class AppModule {}
