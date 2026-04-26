@@ -26,7 +26,7 @@ describe('UsageService', () => {
         {
           provide: NotificationService,
           useValue: {
-            sendNotification: jest.fn(),
+            notifyLimitReached: jest.fn(),
           },
         },
       ],
