@@ -1,0 +1,78 @@
+<!doctype html>
+<html>
+  <head>
+    <title>Notification Test</title>
+    <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+    <style>
+      body {
+        font-family: sans-serif;
+        padding: 20px;
+      }
+      #status {
+        padding: 10px;
+        margin: 10px 0;
+        border-radius: 4px;
+      }
+      .connected {
+        background: #d4edda;
+        color: #155724;
+      }
+      .disconnected {
+        background: #f8d7da;
+        color: #721c24;
+      }
+      .notification {
+        padding: 10px;
+        margin: 5px 0;
+        border-left: 4px solid #007bff;
+        background: #f8f9fa;
+      }
+      .usage_warning {
+        border-color: #ffc107;
+      }
+      .usage_limit_reached {
+        border-color: #dc3545;
+      }
+      .plan_upgraded {
+        border-color: #28a745;
+      }
+    </style>
+  </head>
+  <body>
+    <h2>🔔 Quillify Notifications</h2>
+    <div id="status" class="disconnected">Disconnected</div>
+    <div id="notifications"></div>
+
+    <script>
+      const TOKEN =
+        'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjUsImVtYWlsIjoiZGFubnlAZXhhbXBsZS5jb20iLCJwbGFuIjoiZnJlZSIsImlhdCI6MTc3NzIxMTAxNiwiZXhwIjoxNzc3Mjk3NDE2fQ.Fh5V3ivq2fd976gXWfolGHSSpkbQ3fd2DNFPO4o2JFU';
+
+      const socket = io('http://localhost:3000/notifications', {
+        auth: { token: TOKEN },
+      });
+
+      socket.on('connect', () => {
+        document.getElementById('status').className = 'connected';
+        document.getElementById('status').textContent =
+          '✅ Connected — waiting for notifications';
+      });
+
+      socket.on('notification', (data) => {
+        console.log('Notification:', data);
+        const div = document.createElement('div');
+        div.className = `notification ${data.type}`;
+        div.innerHTML = `
+        <strong>${data.title}</strong><br>
+        ${data.message}<br>
+        <small>${data.timestamp}</small>
+      `;
+        document.getElementById('notifications').prepend(div);
+      });
+
+      socket.on('disconnect', () => {
+        document.getElementById('status').className = 'disconnected';
+        document.getElementById('status').textContent = '❌ Disconnected';
+      });
+    </script>
+  </body>
+</html>

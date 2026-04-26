@@ -3,6 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { UsageRecord } from './entities/usage-record.entity';
 import { UserPlan } from '../auth/entities/user.entity';
+import { NotificationService } from '../notification/notification.service';
 
 const PLAN_LIMITS = {
   [UserPlan.FREE]: 10,
@@ -14,6 +15,7 @@ export class UsageService {
   constructor(
     @InjectRepository(UsageRecord)
     private readonly usageRepository: Repository<UsageRecord>,
+    private readonly notificationService: NotificationService,
   ) {}
 
   private getToday(): string {
@@ -39,6 +41,8 @@ export class UsageService {
 
     // Check limit before incrementing
     if (record.requestCount >= limit) {
+      //Notify limit reached
+      this.notificationService.notifyLimitReached(userId, plan);
       throw new ForbiddenException(
         `Daily limit reached. ${
           plan === UserPlan.FREE
@@ -51,6 +55,15 @@ export class UsageService {
     // Increment
     record.requestCount += 1;
     await this.usageRepository.save(record);
+
+    const usagePercent = (record.requestCount / limit) * 100;
+    if (usagePercent >= 80 && usagePercent < 100) {
+      this.notificationService.notifyUsageWarning(
+        userId,
+        record.requestCount,
+        limit,
+      );
+    }
   }
 
   async getUsage(userId: number, plan: UserPlan) {

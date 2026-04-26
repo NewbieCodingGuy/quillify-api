@@ -8,6 +8,7 @@ import {
   SubscriptionStatus,
 } from './entities/subscription.entity';
 import { User, UserPlan } from '../auth/entities/user.entity';
+import { NotificationService } from '../notification/notification.service';
 
 @Injectable()
 export class SubscriptionService {
@@ -20,6 +21,7 @@ export class SubscriptionService {
     @InjectRepository(User)
     private readonly userRepository: Repository<User>,
     private readonly configService: ConfigService,
+    private readonly notificationService: NotificationService,
   ) {
     this.stripe = new Stripe(
       this.configService.get('STRIPE_SECRET_KEY') as string,
@@ -151,6 +153,7 @@ export class SubscriptionService {
 
     // Upgrade user plan
     await this.userRepository.update({ id: userId }, { plan: UserPlan.PRO });
+    this.notificationService.notifyPlanUpgraded(userId);
 
     this.logger.log(`User ${userId} upgraded to Pro`);
   }
@@ -181,6 +184,7 @@ export class SubscriptionService {
       { id: sub.userId },
       { plan: UserPlan.FREE },
     );
+    this.notificationService.notifyPlanDowngraded(sub.userId);
 
     await this.subscriptionRepository.update(
       { stripeSubscriptionId: subscription.id },
@@ -202,5 +206,6 @@ export class SubscriptionService {
     );
 
     this.logger.warn(`Payment failed for user ${sub.userId}`);
+    this.notificationService.notifyPaymentFailed(sub.userId);
   }
 }
