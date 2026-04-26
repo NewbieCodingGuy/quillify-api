@@ -11,7 +11,7 @@ import { User, UserPlan } from '../auth/entities/user.entity';
 
 @Injectable()
 export class SubscriptionService {
-  private readonly stripe: Stripe;
+  private readonly stripe: InstanceType<typeof Stripe>;
   private readonly logger = new Logger(SubscriptionService.name);
 
   constructor(
@@ -69,7 +69,9 @@ export class SubscriptionService {
   }
 
   async handleWebhook(payload: Buffer, signature: string) {
-    let event: Stripe.Event;
+    let event: ReturnType<
+      InstanceType<typeof Stripe>['webhooks']['constructEvent']
+    >;
 
     try {
       event = this.stripe.webhooks.constructEvent(
