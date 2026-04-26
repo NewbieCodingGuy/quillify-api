@@ -4,6 +4,7 @@ import { ForbiddenException } from '@nestjs/common';
 import { UsageService } from './usage.service';
 import { UsageRecord } from './entities/usage-record.entity';
 import { UserPlan } from '../auth/entities/user.entity';
+import { NotificationService } from '../notification/notification.service';
 
 const mockUsageRepository = {
   findOne: jest.fn(),
@@ -21,6 +22,12 @@ describe('UsageService', () => {
         {
           provide: getRepositoryToken(UsageRecord),
           useValue: mockUsageRepository,
+        },
+        {
+          provide: NotificationService,
+          useValue: {
+            sendNotification: jest.fn(),
+          },
         },
       ],
     }).compile();
