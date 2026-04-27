@@ -5,11 +5,18 @@ import { UsageService } from './usage.service';
 import { UsageRecord } from './entities/usage-record.entity';
 import { UserPlan } from '../auth/entities/user.entity';
 import { NotificationService } from '../notification/notification.service';
+import { CACHE_MANAGER } from '@nestjs/cache-manager';
 
 const mockUsageRepository = {
   findOne: jest.fn(),
   create: jest.fn(),
   save: jest.fn(),
+};
+
+const mockCache = {
+  get: jest.fn(),
+  set: jest.fn(),
+  del: jest.fn(),
 };
 
 describe('UsageService', () => {
@@ -28,6 +35,10 @@ describe('UsageService', () => {
           useValue: {
             notifyLimitReached: jest.fn(),
           },
+        },
+        {
+          provide: CACHE_MANAGER,
+          useValue: mockCache,
         },
       ],
     }).compile();
