@@ -11,6 +11,9 @@ import * as bcrypt from 'bcryptjs';
 import { User } from './entities/user.entity';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
+import { Inject } from '@nestjs/common';
+import { CACHE_MANAGER } from '@nestjs/cache-manager';
+import type { Cache } from 'cache-manager';
 
 @Injectable()
 export class AuthService {
@@ -18,6 +21,7 @@ export class AuthService {
     @InjectRepository(User)
     private readonly userRepository: Repository<User>,
     private readonly jwtService: JwtService,
+    @Inject(CACHE_MANAGER) private readonly cacheManager: Cache,
   ) {}
 
   async register(dto: RegisterDto) {
@@ -66,9 +70,23 @@ export class AuthService {
   }
 
   async findById(id: number): Promise<User> {
+    const cacheKey = `user:${id}`;
+
+    //Check cache first
+    const cached = await this.cacheManager.get<User>(cacheKey);
+    if (cached) {
+      return cached;
+    }
     const user = await this.userRepository.findOne({ where: { id } });
     if (!user) throw new NotFoundException('User not found');
+
+    //Ccahe for 5 minutes
+    await this.cacheManager.set(cacheKey, user, 300000);
     return user;
+  }
+
+  async invalidateUserCache(userId: number) {
+    await this.cacheManager.del(`user:${userId}`);
   }
 
   private buildUserResponse(user: User) {
