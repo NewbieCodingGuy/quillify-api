@@ -1,9 +1,11 @@
-import { Injectable, ForbiddenException } from '@nestjs/common';
+import { Injectable, ForbiddenException, Inject } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { UsageRecord } from './entities/usage-record.entity';
 import { UserPlan } from '../auth/entities/user.entity';
 import { NotificationService } from '../notification/notification.service';
+import { CACHE_MANAGER } from '@nestjs/cache-manager';
+import type { Cache } from 'cache-manager';
 
 const PLAN_LIMITS = {
   [UserPlan.FREE]: 10,
@@ -16,6 +18,8 @@ export class UsageService {
     @InjectRepository(UsageRecord)
     private readonly usageRepository: Repository<UsageRecord>,
     private readonly notificationService: NotificationService,
+    @Inject(CACHE_MANAGER)
+    private readonly cacheManager: Cache,
   ) {}
 
   private getToday(): string {
@@ -64,9 +68,19 @@ export class UsageService {
         limit,
       );
     }
+
+    //Invalidate usage cache after increment
+    await this.cacheManager.del(`usage:${userId}:${this.getToday()}`);
   }
 
   async getUsage(userId: number, plan: UserPlan) {
+    const cacheKey = `usage:${userId}:${this.getToday()}`;
+
+    const cached = await this.cacheManager.get(cacheKey);
+    if (cached) {
+      return cached;
+    }
+
     const today = this.getToday();
     const limit = PLAN_LIMITS[plan];
 
@@ -74,13 +88,16 @@ export class UsageService {
       where: { userId, date: today },
     });
 
-    return {
+    const result = {
       used: record?.requestCount ?? 0,
       limit,
       remaining: Math.max(0, limit - (record?.requestCount ?? 0)),
       resetAt: `${today}T23:59:59.000Z`,
       plan,
     };
+
+    await this.cacheManager.set(cacheKey, result, 30000);
+    return result;
   }
 
   async getUsageHistory(userId: number) {

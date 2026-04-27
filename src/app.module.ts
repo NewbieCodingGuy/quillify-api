@@ -6,6 +6,8 @@ import { UsageModule } from './modules/usage/usage.module';
 import { AiModule } from './modules/ai/ai.module';
 import { SubscriptionModule } from './modules/subscription/subscription.module';
 import { NotificationModule } from './modules/notification/notification.module';
+import { CacheModule } from '@nestjs/cache-manager';
+import { createKeyv } from '@keyv/redis';
 
 @Module({
   imports: [
@@ -33,6 +35,17 @@ import { NotificationModule } from './modules/notification/notification.module';
     AiModule,
     SubscriptionModule,
     NotificationModule,
+    CacheModule.registerAsync({
+      isGlobal: true,
+      useFactory: (config: ConfigService) => ({
+        stores: [
+          createKeyv(
+            `redis://${config.get('REDIS_HOST')}:${config.get('REDIS_PORT')}`,
+          ),
+        ],
+      }),
+      inject: [ConfigService],
+    }),
   ],
 })
 export class AppModule {}

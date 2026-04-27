@@ -1,4 +1,9 @@
-import { Injectable, Logger, BadRequestException } from '@nestjs/common';
+import {
+  Injectable,
+  Logger,
+  BadRequestException,
+  Inject,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { ConfigService } from '@nestjs/config';
@@ -9,6 +14,8 @@ import {
 } from './entities/subscription.entity';
 import { User, UserPlan } from '../auth/entities/user.entity';
 import { NotificationService } from '../notification/notification.service';
+import { CACHE_MANAGER } from '@nestjs/cache-manager';
+import type { Cache } from 'cache-manager';
 
 @Injectable()
 export class SubscriptionService {
@@ -22,6 +29,8 @@ export class SubscriptionService {
     private readonly userRepository: Repository<User>,
     private readonly configService: ConfigService,
     private readonly notificationService: NotificationService,
+    @Inject(CACHE_MANAGER)
+    private readonly cacheManager: Cache,
   ) {
     this.stripe = new Stripe(
       this.configService.get('STRIPE_SECRET_KEY') as string,
@@ -119,16 +128,23 @@ export class SubscriptionService {
   }
 
   async getStatus(userId: number) {
+    const cacheKey = `subscription:${userId}`;
+    const cached = await this.cacheManager.get(cacheKey);
+    if (cached) return cached;
+
     const user = await this.userRepository.findOne({ where: { id: userId } });
     const subscription = await this.subscriptionRepository.findOne({
       where: { userId },
     });
 
-    return {
+    const result = {
       plan: user?.plan,
       status: subscription?.status || 'none',
       currentPeriodEnd: subscription?.currentPeriodEnd || null,
     };
+
+    await this.cacheManager.set(cacheKey, result, 60000);
+    return result;
   }
 
   private async handleCheckoutCompleted(session: Stripe.Checkout.Session) {
@@ -156,6 +172,7 @@ export class SubscriptionService {
     this.notificationService.notifyPlanUpgraded(userId);
 
     this.logger.log(`User ${userId} upgraded to Pro`);
+    this.invalidateSubscriptionCache(userId);
   }
 
   private async handleSubscriptionUpdated(subscription: Stripe.Subscription) {
@@ -192,6 +209,7 @@ export class SubscriptionService {
     );
 
     this.logger.log(`User ${sub.userId} downgraded to Free`);
+    this.invalidateSubscriptionCache(sub.userId);
   }
 
   private async handlePaymentFailed(invoice: Stripe.Invoice) {
@@ -207,5 +225,9 @@ export class SubscriptionService {
 
     this.logger.warn(`Payment failed for user ${sub.userId}`);
     this.notificationService.notifyPaymentFailed(sub.userId);
+  }
+
+  private async invalidateSubscriptionCache(userId: number) {
+    await this.cacheManager.del(`subscription:${userId}`);
   }
 }
