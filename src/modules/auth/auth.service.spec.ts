@@ -5,6 +5,11 @@ import { ConflictException, UnauthorizedException } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { User } from './entities/user.entity';
 import { CACHE_MANAGER } from '@nestjs/cache-manager';
+import { EmailService } from '../email/email.service';
+
+const mockEmailService = {
+  sendWelcomeEmail: jest.fn(),
+};
 
 const mockUserRepository = {
   findOne: jest.fn(),
@@ -41,6 +46,10 @@ describe('AuthService', () => {
         {
           provide: CACHE_MANAGER,
           useValue: mockCache,
+        },
+        {
+          provide: EmailService,
+          useValue: mockEmailService,
         },
       ],
     }).compile();

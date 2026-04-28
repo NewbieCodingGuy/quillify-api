@@ -6,6 +6,17 @@ import { UsageRecord } from './entities/usage-record.entity';
 import { UserPlan } from '../auth/entities/user.entity';
 import { NotificationService } from '../notification/notification.service';
 import { CACHE_MANAGER } from '@nestjs/cache-manager';
+import { User } from '../auth/entities/user.entity';
+import { EmailService } from '../email/email.service';
+
+const mockUserRepository = {
+  findOne: jest.fn(),
+};
+
+const mockEmailService = {
+  sendLimitReachedEmail: jest.fn(),
+  sendUsageWarningEmail: jest.fn(),
+};
 
 const mockUsageRepository = {
   findOne: jest.fn(),
@@ -39,6 +50,14 @@ describe('UsageService', () => {
         {
           provide: CACHE_MANAGER,
           useValue: mockCache,
+        },
+        {
+          provide: getRepositoryToken(User),
+          useValue: mockUserRepository,
+        },
+        {
+          provide: EmailService,
+          useValue: mockEmailService,
         },
       ],
     }).compile();
