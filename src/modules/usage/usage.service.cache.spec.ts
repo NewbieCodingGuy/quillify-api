@@ -5,6 +5,8 @@ import { UsageService } from './usage.service';
 import { UsageRecord } from './entities/usage-record.entity';
 import { NotificationService } from '../notification/notification.service';
 import { UserPlan } from '../auth/entities/user.entity';
+import { User } from '../auth/entities/user.entity';
+import { EmailService } from '../email/email.service';
 
 const mockCacheManager = {
   get: jest.fn(),
@@ -21,6 +23,14 @@ const mockUsageRepository = {
 const mockNotificationService = {
   notifyUsageWarning: jest.fn(),
   notifyLimitReached: jest.fn(),
+};
+
+const mockUserRepository = {
+  findOne: jest.fn(),
+};
+
+const mockEmailService = {
+  sendMail: jest.fn(),
 };
 
 describe('UsageService - Caching', () => {
@@ -41,6 +51,14 @@ describe('UsageService - Caching', () => {
         {
           provide: CACHE_MANAGER,
           useValue: mockCacheManager,
+        },
+        {
+          provide: getRepositoryToken(User),
+          useValue: mockUserRepository,
+        },
+        {
+          provide: EmailService,
+          useValue: mockEmailService,
         },
       ],
     }).compile();
