@@ -14,6 +14,7 @@ import { LoginDto } from './dto/login.dto';
 import { Inject } from '@nestjs/common';
 import { CACHE_MANAGER } from '@nestjs/cache-manager';
 import type { Cache } from 'cache-manager';
+import { EmailService } from '../email/email.service';
 
 @Injectable()
 export class AuthService {
@@ -22,6 +23,7 @@ export class AuthService {
     private readonly userRepository: Repository<User>,
     private readonly jwtService: JwtService,
     @Inject(CACHE_MANAGER) private readonly cacheManager: Cache,
+    private readonly emailService: EmailService,
   ) {}
 
   async register(dto: RegisterDto) {
@@ -35,6 +37,7 @@ export class AuthService {
 
     const user = this.userRepository.create(dto);
     const saved = await this.userRepository.save(user);
+    await this.emailService.sendWelcomeEmail(saved.id, saved.name, saved.email);
 
     return this.buildUserResponse(saved);
   }

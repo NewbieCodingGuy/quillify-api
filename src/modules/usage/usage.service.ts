@@ -6,6 +6,8 @@ import { UserPlan } from '../auth/entities/user.entity';
 import { NotificationService } from '../notification/notification.service';
 import { CACHE_MANAGER } from '@nestjs/cache-manager';
 import type { Cache } from 'cache-manager';
+import { User } from '../auth/entities/user.entity';
+import { EmailService } from '../email/email.service';
 
 const PLAN_LIMITS = {
   [UserPlan.FREE]: 10,
@@ -17,9 +19,12 @@ export class UsageService {
   constructor(
     @InjectRepository(UsageRecord)
     private readonly usageRepository: Repository<UsageRecord>,
+    @InjectRepository(User)
+    private readonly userRepository: Repository<User>,
     private readonly notificationService: NotificationService,
     @Inject(CACHE_MANAGER)
     private readonly cacheManager: Cache,
+    private readonly emailService: EmailService,
   ) {}
 
   private getToday(): string {
@@ -47,6 +52,10 @@ export class UsageService {
     if (record.requestCount >= limit) {
       //Notify limit reached
       this.notificationService.notifyLimitReached(userId, plan);
+      const user = await this.userRepository.findOne({ where: { id: userId } });
+      if (user) {
+        await this.emailService.sendLimitReachedEmail(userId, user.email, plan);
+      }
       throw new ForbiddenException(
         `Daily limit reached. ${
           plan === UserPlan.FREE
@@ -67,6 +76,16 @@ export class UsageService {
         record.requestCount,
         limit,
       );
+
+      const user = await this.userRepository.findOne({ where: { id: userId } });
+      if (user) {
+        await this.emailService.sendUsageWarningEmail(
+          userId,
+          user.email,
+          record.requestCount,
+          limit,
+        );
+      }
     }
 
     //Invalidate usage cache after increment

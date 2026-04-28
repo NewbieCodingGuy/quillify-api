@@ -16,6 +16,7 @@ import { User, UserPlan } from '../auth/entities/user.entity';
 import { NotificationService } from '../notification/notification.service';
 import { CACHE_MANAGER } from '@nestjs/cache-manager';
 import type { Cache } from 'cache-manager';
+import { EmailService } from '../email/email.service';
 
 @Injectable()
 export class SubscriptionService {
@@ -31,6 +32,7 @@ export class SubscriptionService {
     private readonly notificationService: NotificationService,
     @Inject(CACHE_MANAGER)
     private readonly cacheManager: Cache,
+    private readonly emailService: EmailService,
   ) {
     this.stripe = new Stripe(
       this.configService.get('STRIPE_SECRET_KEY') as string,
@@ -169,6 +171,14 @@ export class SubscriptionService {
 
     // Upgrade user plan
     await this.userRepository.update({ id: userId }, { plan: UserPlan.PRO });
+    const user = await this.userRepository.findOne({ where: { id: userId } });
+    if (user) {
+      await this.emailService.sendPaymentConfirmedEmail(
+        userId,
+        user.email,
+        'pro',
+      );
+    }
     this.notificationService.notifyPlanUpgraded(userId);
 
     this.logger.log(`User ${userId} upgraded to Pro`);

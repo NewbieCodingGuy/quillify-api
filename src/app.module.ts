@@ -8,6 +8,9 @@ import { SubscriptionModule } from './modules/subscription/subscription.module';
 import { NotificationModule } from './modules/notification/notification.module';
 import { CacheModule } from '@nestjs/cache-manager';
 import { createKeyv } from '@keyv/redis';
+import { BullModule } from '@nestjs/bullmq';
+import { EmailModule } from './modules/email/email.module';
+import { AnalyticsModule } from './modules/analytics/analytics.module';
 
 @Module({
   imports: [
@@ -46,6 +49,27 @@ import { createKeyv } from '@keyv/redis';
       }),
       inject: [ConfigService],
     }),
+    BullModule.forRootAsync({
+      imports: [ConfigModule],
+      inject: [ConfigService],
+      useFactory: (config: ConfigService) => ({
+        connection: {
+          host: config.get('REDIS_HOST'),
+          port: config.get('REDIS_PORT'),
+        },
+        defaultJobOptions: {
+          attempts: 3,
+          backoff: {
+            type: 'exponential',
+            delay: 2000,
+          },
+          removeOnComplete: 100,
+          removeOnFail: 200,
+        },
+      }),
+    }),
+    EmailModule,
+    AnalyticsModule,
   ],
 })
 export class AppModule {}
