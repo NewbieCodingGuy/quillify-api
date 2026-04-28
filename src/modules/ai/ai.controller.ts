@@ -19,6 +19,7 @@ import {
   ChatDto,
 } from './dto/generate.dto';
 import { UserPlan } from '../auth/entities/user.entity';
+import { AnalyticsService } from '../analytics/analytics.service';
 
 @Controller('ai')
 @UseGuards(JwtGuard)
@@ -26,6 +27,7 @@ export class AiController {
   constructor(
     private readonly aiService: AiService,
     private readonly usageService: UsageService,
+    private readonly analyticsService: AnalyticsService,
   ) {}
 
   @Post('generate')
@@ -34,7 +36,15 @@ export class AiController {
       user.userId,
       user.plan as UserPlan,
     );
-    return this.aiService.generateText(dto, user.userId);
+    const result = this.aiService.generateText(dto, user.userId);
+
+    await this.analyticsService.trackUsage(
+      user.userId,
+      'GENERATE',
+      (await result).usage.totalTokens || 0,
+    );
+
+    return result;
   }
 
   @Post('improve')
