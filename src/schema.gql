@@ -1,0 +1,56 @@
+# ------------------------------------------------------
+# THIS FILE WAS AUTOMATICALLY GENERATED (DO NOT MODIFY)
+# ------------------------------------------------------
+
+type AuthPayload {
+  token: String!
+  user: UserType!
+}
+
+"""
+A date-time string at UTC, such as 2019-12-03T09:54:33Z, compliant with the date-time format.
+"""
+scalar DateTime
+
+input LoginDto {
+  email: String!
+  password: String!
+}
+
+type Mutation {
+  login(input: LoginDto!): AuthPayload!
+  register(input: RegisterDto!): UserType!
+}
+
+type Query {
+  me: UserType!
+  myUsage: UsageType!
+}
+
+input RegisterDto {
+  email: String!
+  name: String!
+  password: String!
+}
+
+type UsageType {
+  limit: Int!
+  plan: String!
+  remaining: Int!
+  resetAt: String!
+  used: Int!
+}
+
+"""User subscription plan"""
+enum UserPlan {
+  FREE
+  PRO
+}
+
+type UserType {
+  createdAt: DateTime!
+  email: String!
+  id: Int!
+  name: String!
+  plan: UserPlan!
+}

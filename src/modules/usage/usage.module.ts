@@ -7,6 +7,7 @@ import { AuthModule } from '../auth/auth.module';
 import { NotificationModule } from '../notification/notification.module';
 import { User } from '../auth/entities/user.entity';
 import { EmailModule } from '../email/email.module';
+import { UsageResolver } from './usage.resolver';
 
 @Module({
   imports: [
@@ -17,7 +18,7 @@ import { EmailModule } from '../email/email.module';
     EmailModule,
   ],
   controllers: [UsageController],
-  providers: [UsageService],
+  providers: [UsageService, UsageResolver],
   exports: [UsageService], // AI module will need this
 })
 export class UsageModule {}

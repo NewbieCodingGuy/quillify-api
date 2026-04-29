@@ -16,7 +16,8 @@ export class JwtGuard implements CanActivate {
   ) {}
 
   canActivate(context: ExecutionContext): boolean {
-    const request = context.switchToHttp().getRequest<Request>();
+    // const request = context.switchToHttp().getRequest<Request>();
+    const request = this.getRequest(context);
     const token = this.extractToken(request);
 
     if (!token) {
@@ -38,5 +39,10 @@ export class JwtGuard implements CanActivate {
     const authHeader = request.headers['authorization'];
     if (!authHeader?.startsWith('Bearer ')) return null;
     return authHeader.split(' ')[1];
+  }
+
+  //For GraphQL
+  getRequest(context: ExecutionContext): Request {
+    return context.switchToHttp().getRequest();
   }
 }

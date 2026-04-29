@@ -6,6 +6,7 @@ import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
 import { User } from './entities/user.entity';
 import { EmailModule } from '../email/email.module';
+import { AuthResolver } from './auth.resolver';
 
 @Module({
   imports: [
@@ -23,7 +24,7 @@ import { EmailModule } from '../email/email.module';
     EmailModule,
   ],
   controllers: [AuthController],
-  providers: [AuthService],
+  providers: [AuthService, AuthResolver],
   exports: [AuthService, JwtModule], // export for other modules to use
 })
 export class AuthModule {}
