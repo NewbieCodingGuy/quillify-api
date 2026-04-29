@@ -11,6 +11,9 @@ import { createKeyv } from '@keyv/redis';
 import { BullModule } from '@nestjs/bullmq';
 import { EmailModule } from './modules/email/email.module';
 import { AnalyticsModule } from './modules/analytics/analytics.module';
+import { GraphQLModule } from '@nestjs/graphql';
+import { ApolloDriver, ApolloDriverConfig } from '@nestjs/apollo';
+import { join } from 'path';
 
 @Module({
   imports: [
@@ -70,6 +73,13 @@ import { AnalyticsModule } from './modules/analytics/analytics.module';
     }),
     EmailModule,
     AnalyticsModule,
+    GraphQLModule.forRoot<ApolloDriverConfig>({
+      driver: ApolloDriver,
+      autoSchemaFile: join(process.cwd(), 'src/schema.gql'),
+      sortSchema: true,
+      playground: true,
+      context: ({ req }) => ({ req }),
+    }),
   ],
 })
 export class AppModule {}
