@@ -13,17 +13,20 @@ import { LoginDto } from './dto/login.dto';
 import { JwtGuard } from '../../common/guards/jwt.guard';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import type { JwtPayload } from '../../common/decorators/current-user.decorator';
+import { Throttle, SkipThrottle } from '@nestjs/throttler';
 
 @Controller('auth')
 export class AuthController {
   constructor(private readonly authService: AuthService) {}
 
   @Post('register')
+  @Throttle({ global: { limit: 10, ttl: 3600000 } })
   async register(@Body() dto: RegisterDto) {
     return this.authService.register(dto);
   }
 
   @Post('login')
+  @Throttle({ global: { limit: 5, ttl: 60000 } })
   @HttpCode(HttpStatus.OK) // POST returns 200 not 201 for login
   async login(@Body() dto: LoginDto) {
     return this.authService.login(dto);
@@ -31,6 +34,7 @@ export class AuthController {
 
   @Get('me')
   @UseGuards(JwtGuard)
+  @SkipThrottle()
   async getMe(@CurrentUser() user: JwtPayload) {
     return this.authService.findById(user.userId);
   }

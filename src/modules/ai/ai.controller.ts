@@ -20,9 +20,10 @@ import {
 } from './dto/generate.dto';
 import { UserPlan } from '../auth/entities/user.entity';
 import { AnalyticsService } from '../analytics/analytics.service';
+import { PlanThrottlerGuard } from '../../common/guards/plan-throttler.guard';
 
 @Controller('ai')
-@UseGuards(JwtGuard)
+@UseGuards(JwtGuard, PlanThrottlerGuard)
 export class AiController {
   constructor(
     private readonly aiService: AiService,
