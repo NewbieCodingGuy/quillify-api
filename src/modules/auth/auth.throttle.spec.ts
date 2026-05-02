@@ -1,14 +1,32 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { INestApplication } from '@nestjs/common';
 import * as request from 'supertest';
-import { AppModule } from '../../app.module';
+import { AuthController } from './auth.controller';
+import { AuthService } from './auth.service';
+import { CACHE_MANAGER } from '@nestjs/cache-manager';
+import { APP_GUARD } from '@nestjs/core';
+import { ThrottlerGuard } from '@nestjs/throttler';
 
 describe('Auth Throttling', () => {
   let app: INestApplication;
 
   beforeAll(async () => {
     const module: TestingModule = await Test.createTestingModule({
-      imports: [AppModule],
+      controllers: [AuthController],
+      providers: [
+        AuthService,
+        {
+          provide: APP_GUARD,
+          useClass: ThrottlerGuard,
+        },
+        {
+          provide: CACHE_MANAGER,
+          useValue: {
+            get: jest.fn(),
+            set: jest.fn(),
+          },
+        },
+      ],
     }).compile();
 
     app = module.createNestApplication();

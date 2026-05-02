@@ -16,7 +16,6 @@ import { ApolloDriver, ApolloDriverConfig } from '@nestjs/apollo';
 import { join } from 'path';
 import { ThrottlerModule } from '@nestjs/throttler';
 import { APP_GUARD } from '@nestjs/core';
-import { ThrottlerStorageRedisService } from '@nest-lab/throttler-storage-redis';
 import { PlanThrottlerGuard } from './common/guards/plan-throttler.guard';
 
 @Module({
