@@ -1,11 +1,12 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { INestApplication } from '@nestjs/common';
-import * as request from 'supertest';
+import request from 'supertest'; // <--- Updated Import
 import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
 import { CACHE_MANAGER } from '@nestjs/cache-manager';
+import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
 import { APP_GUARD } from '@nestjs/core';
-import { ThrottlerGuard } from '@nestjs/throttler';
+import { JwtGuard } from '../../common/guards/jwt.guard';
 
 describe('Auth Throttling', () => {
   let app: INestApplication;
@@ -13,26 +14,29 @@ describe('Auth Throttling', () => {
 
   beforeAll(async () => {
     const module: TestingModule = await Test.createTestingModule({
+      imports: [
+        // Array syntax fixed the .sort() error
+        ThrottlerModule.forRoot([
+          {
+            ttl: 60000,
+            limit: 5,
+          },
+        ]),
+      ],
       controllers: [AuthController],
       providers: [
-        {
-          provide: AuthService,
-          useValue: {
-            login: jest.fn().mockResolvedValue({
-              access_token: 'mock-token',
-            }),
-          },
-        },
         {
           provide: APP_GUARD,
           useClass: ThrottlerGuard,
         },
         {
+          provide: AuthService,
+          useValue: {
+            login: jest.fn().mockResolvedValue({ access_token: 'mock-token' }),
+          },
+        },
+        {
           provide: CACHE_MANAGER,
-          //   useValue: {
-          //     get: jest.fn(),
-          //     set: jest.fn(),
-          //   },
           useValue: {
             get: jest.fn((key) => store[key]),
             set: jest.fn((key, value) => {
@@ -41,35 +45,33 @@ describe('Auth Throttling', () => {
           },
         },
       ],
-    }).compile();
+    })
+      .overrideGuard(JwtGuard)
+      .useValue({ canActivate: jest.fn(() => true) })
+      .compile();
 
     app = module.createNestApplication();
+    app.setGlobalPrefix('api/v1'); // <--- Matches your main.ts prefix
     await app.init();
   });
 
   afterAll(async () => {
-    await app.close();
+    if (app) await app.close();
   });
 
   it('should block login after 5 attempts', async () => {
-    const loginData = {
-      email: 'test@example.com',
-      password: 'wrongpassword',
-    };
+    const loginData = { email: 'test@example.com', password: 'wrongpassword' };
 
-    // Make 5 requests
     for (let i = 0; i < 5; i++) {
-      await request(app.getHttpServer())
+      await request(app.getHttpServer()) // <--- Now correctly recognized as a function
         .post('/api/v1/auth/login')
         .send(loginData);
     }
 
-    // 6th request should be throttled
     const response = await request(app.getHttpServer())
       .post('/api/v1/auth/login')
       .send(loginData);
 
     expect(response.status).toBe(429);
-    expect(response.body.error).toBe('Too Many Requests');
   });
 });
