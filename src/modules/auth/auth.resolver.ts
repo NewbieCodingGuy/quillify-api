@@ -5,7 +5,7 @@ import { UserType, AuthPayload } from './dto/user.type';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
 import { GqlAuthGuard } from '../../common/guards/gql-auth.guard';
-import { CurrentUser } from 'src/common/decorators/current-user.decorator';
+import type { CurrentUser } from 'src/common/decorators/current-user.decorator';
 import type { JwtPayload } from 'src/common/decorators/current-user.decorator';
 
 @Resolver(() => UserType)
