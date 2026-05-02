@@ -9,21 +9,35 @@ import { ThrottlerGuard } from '@nestjs/throttler';
 
 describe('Auth Throttling', () => {
   let app: INestApplication;
+  let store = {};
 
   beforeAll(async () => {
     const module: TestingModule = await Test.createTestingModule({
       controllers: [AuthController],
       providers: [
-        AuthService,
+        {
+          provide: AuthService,
+          useValue: {
+            login: jest.fn().mockResolvedValue({
+              access_token: 'mock-token',
+            }),
+          },
+        },
         {
           provide: APP_GUARD,
           useClass: ThrottlerGuard,
         },
         {
           provide: CACHE_MANAGER,
+          //   useValue: {
+          //     get: jest.fn(),
+          //     set: jest.fn(),
+          //   },
           useValue: {
-            get: jest.fn(),
-            set: jest.fn(),
+            get: jest.fn((key) => store[key]),
+            set: jest.fn((key, value) => {
+              store[key] = value;
+            }),
           },
         },
       ],
