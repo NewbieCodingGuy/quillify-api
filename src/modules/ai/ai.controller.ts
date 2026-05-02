@@ -20,7 +20,7 @@ import {
 } from './dto/generate.dto';
 import { UserPlan } from '../auth/entities/user.entity';
 import { AnalyticsService } from '../analytics/analytics.service';
-import { PlanThrottlerGuard } from 'src/common/guards/plan-throttler.guard';
+import { PlanThrottlerGuard } from '../../common/guards/plan-throttler.guard';
 
 @Controller('ai')
 @UseGuards(JwtGuard, PlanThrottlerGuard)
