@@ -2,6 +2,7 @@ import { NestFactory } from '@nestjs/core';
 import { ValidationPipe, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { AppModule } from './app.module';
+import { ThrottlerExceptionFilter } from './common/filters/throttler-exception.filter';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule, {
@@ -21,6 +22,8 @@ async function bootstrap() {
 
   // Global prefix — all routes start with /api/v1
   app.setGlobalPrefix('api/v1');
+
+  app.useGlobalFilters(new ThrottlerExceptionFilter());
 
   const port = config.get<number>('PORT') || 3000;
   await app.listen(port);

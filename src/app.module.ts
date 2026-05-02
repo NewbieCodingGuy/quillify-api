@@ -14,6 +14,10 @@ import { AnalyticsModule } from './modules/analytics/analytics.module';
 import { GraphQLModule } from '@nestjs/graphql';
 import { ApolloDriver, ApolloDriverConfig } from '@nestjs/apollo';
 import { join } from 'path';
+import { ThrottlerModule } from '@nestjs/throttler';
+import { APP_GUARD } from '@nestjs/core';
+import { ThrottlerStorageRedisService } from '@nest-lab/throttler-storage-redis';
+import { PlanThrottlerGuard } from './common/guards/plan-throttler.guard';
 
 @Module({
   imports: [
@@ -80,6 +84,25 @@ import { join } from 'path';
       playground: true,
       context: ({ req }) => ({ req }),
     }),
+    ThrottlerModule.forRootAsync({
+      imports: [ConfigModule],
+      inject: [ConfigService],
+      useFactory: () => ({
+        throttlers: [
+          {
+            name: 'global',
+            ttl: 60000,
+            limit: 100,
+          },
+        ],
+      }),
+    }),
+  ],
+  providers: [
+    {
+      provide: APP_GUARD,
+      useClass: PlanThrottlerGuard,
+    },
   ],
 })
 export class AppModule {}

@@ -14,6 +14,7 @@ import { SubscriptionService } from './subscription.service';
 import { JwtGuard } from '../../common/guards/jwt.guard';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import type { JwtPayload } from '../../common/decorators/current-user.decorator';
+import { SkipThrottle } from '@nestjs/throttler';
 
 @Controller('subscription')
 export class SubscriptionController {
@@ -35,6 +36,7 @@ export class SubscriptionController {
   }
 
   @Post('webhook')
+  @SkipThrottle()
   @HttpCode(200)
   async handleWebhook(
     @Req() req: RawBodyRequest<Request>,
