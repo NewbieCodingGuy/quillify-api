@@ -17,6 +17,8 @@ import { join } from 'path';
 import { ThrottlerModule } from '@nestjs/throttler';
 import { APP_GUARD } from '@nestjs/core';
 import { PlanThrottlerGuard } from './common/guards/plan-throttler.guard';
+import { MiddlewareConsumer, NestModule } from '@nestjs/common';
+import { RequestIdMiddleware } from './common/middleware/request-id.middleware';
 
 @Module({
   imports: [
@@ -104,4 +106,8 @@ import { PlanThrottlerGuard } from './common/guards/plan-throttler.guard';
     },
   ],
 })
-export class AppModule {}
+export class AppModule implements NestModule {
+  configure(consumer: MiddlewareConsumer) {
+    consumer.apply(RequestIdMiddleware).forRoutes('*');
+  }
+}
