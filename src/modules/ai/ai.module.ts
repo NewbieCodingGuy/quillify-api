@@ -1,11 +1,11 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { AiController } from './ai.controller';
-import { AiService } from './ai.service';
 import { ChatSession } from './entities/chat.entity';
 import { AuthModule } from '../auth/auth.module';
 import { UsageModule } from '../usage/usage.module';
 import { AnalyticsModule } from '../analytics/analytics.module';
+import { AiClientModule } from './ai-client.module';
 
 @Module({
   imports: [
@@ -13,9 +13,10 @@ import { AnalyticsModule } from '../analytics/analytics.module';
     AuthModule,
     UsageModule,
     AnalyticsModule,
+    AiClientModule,
   ],
   controllers: [AiController],
-  providers: [AiService],
-  exports: [AiService],
+  providers: [],
+  exports: [],
 })
 export class AiModule {}
