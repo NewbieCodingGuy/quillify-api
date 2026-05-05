@@ -19,12 +19,15 @@ import { APP_GUARD } from '@nestjs/core';
 import { PlanThrottlerGuard } from './common/guards/plan-throttler.guard';
 import { MiddlewareConsumer, NestModule } from '@nestjs/common';
 import { RequestIdMiddleware } from './common/middleware/request-id.middleware';
+import { HealthModule } from './modules/health/health.module';
+import { validate } from './config/validate-env';
 
 @Module({
   imports: [
     ConfigModule.forRoot({
       isGlobal: true,
       envFilePath: '.env',
+      validate,
     }),
     TypeOrmModule.forRootAsync({
       imports: [ConfigModule],
@@ -98,6 +101,7 @@ import { RequestIdMiddleware } from './common/middleware/request-id.middleware';
         ],
       }),
     }),
+    HealthModule,
   ],
   providers: [
     {
